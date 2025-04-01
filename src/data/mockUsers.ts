@@ -23,6 +23,45 @@ export const mockUsers: User[] = Array.from({ length: 100 }, (_, i) => {
     return new Date(start.getTime() + Math.random() * (end.getTime() - start.getTime())).toISOString().split('T')[0];
   };
 
+  // Generate random attendance data
+  const generateRandomAttendance = (userId: number) => {
+    // Make some users have deviations based on their ID
+    const hasDeviations = userId % 5 === 0 || userId % 7 === 0;
+    
+    const dailyDeviation = Math.floor(Math.random() * 21) - 10;
+    const monthlyDeviation = Math.floor(Math.random() * 41) - 20;
+    const quarterlyDeviation = Math.floor(Math.random() * 61) - 30;
+    
+    const leaveOnDuty = Math.floor(Math.random() * 5);
+    const optionalHoliday = Math.floor(Math.random() * 3);
+    const holidayWorking = Math.floor(Math.random() * 2);
+    
+    // Create deviation flags based on user ID to distribute different types
+    const deviationFlags = hasDeviations ? {
+      consecutiveCrossOffice: userId % 10 === 0,
+      consecutiveAbsent: userId % 12 === 0,
+      excessiveOnDuty: userId % 15 === 0,
+      insufficientOnDuty: userId % 18 === 0,
+      noLeaveInQuarter: userId % 20 === 0,
+      onlyCompOff: userId % 22 === 0,
+      excessivePresent: userId % 25 === 0,
+      wfhMarkedAsOnDuty: userId % 28 === 0,
+      onDutyWithLongHours: userId % 30 === 0,
+      missingOutcomeReports: userId % 33 === 0,
+      topDeviator: userId % 40 === 0,
+    } : undefined;
+    
+    return {
+      dailyDeviation,
+      monthlyDeviation,
+      quarterlyDeviation,
+      leaveOnDuty,
+      optionalHoliday,
+      holidayWorking,
+      deviationFlags
+    };
+  };
+
   return {
     id,
     name: `User ${id}`,
@@ -31,5 +70,6 @@ export const mockUsers: User[] = Array.from({ length: 100 }, (_, i) => {
     status: Math.random() > 0.3 ? 'active' : 'inactive',
     joinDate: getRandomDate(),
     lastActive: getRecentDate(),
+    attendance: generateRandomAttendance(id)
   };
 });

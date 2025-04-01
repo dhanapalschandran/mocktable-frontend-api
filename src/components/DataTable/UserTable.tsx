@@ -1,9 +1,10 @@
 
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { FilterParams, User, SortParams } from "@/types/table";
-import { ArrowDown, ArrowUp, Clock, Calendar, CalendarDays } from "lucide-react";
+import { AlertTriangle, ArrowDown, ArrowUp, Clock, Calendar, CalendarDays } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface UserTableProps {
   users: User[];
@@ -33,12 +34,15 @@ export const UserTable = ({ users, sort, onSort, isLoading, filters }: UserTable
     </div>
   );
 
-  // Determine which columns to show based on the attendance view
+  // Determine which columns to show based on filters
   const isAttendanceView = filters?.attendanceView !== undefined;
+  const isDeviationView = filters?.deviationFilter !== undefined;
+  
   const showDailyDeviation = !isAttendanceView || filters?.attendanceView === 'all' || filters?.attendanceView === 'daily';
   const showMonthlyDeviation = !isAttendanceView || filters?.attendanceView === 'all' || filters?.attendanceView === 'monthly';
   const showQuarterlyDeviation = !isAttendanceView || filters?.attendanceView === 'all' || filters?.attendanceView === 'quarterly';
   const showLeaveTypes = !isAttendanceView || filters?.attendanceView === 'all' || filters?.attendanceView === 'leaves';
+  const showDeviations = isDeviationView || filters?.deviationFilter === 'all';
 
   if (isLoading) {
     return (
@@ -57,6 +61,7 @@ export const UserTable = ({ users, sort, onSort, isLoading, filters }: UserTable
               {showLeaveTypes && <TableHead>Leave on Duty</TableHead>}
               {showLeaveTypes && <TableHead>Optional Holiday</TableHead>}
               {showLeaveTypes && <TableHead>Holiday Working</TableHead>}
+              {showDeviations && <TableHead>Deviation Flags</TableHead>}
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -66,7 +71,8 @@ export const UserTable = ({ users, sort, onSort, isLoading, filters }: UserTable
                   (showDailyDeviation ? 1 : 0) + 
                   (showMonthlyDeviation ? 1 : 0) + 
                   (showQuarterlyDeviation ? 1 : 0) + 
-                  (showLeaveTypes ? 3 : 0)
+                  (showLeaveTypes ? 3 : 0) + 
+                  (showDeviations ? 1 : 0)
                 }).map((_, j) => (
                   <TableCell key={j}>
                     <Skeleton className="h-4 w-full" />
@@ -79,6 +85,19 @@ export const UserTable = ({ users, sort, onSort, isLoading, filters }: UserTable
       </div>
     );
   }
+
+  // Helper function to check if a user matches the deviation filter
+  const matchesDeviationFilter = (user: User, filter?: string): boolean => {
+    if (!filter || filter === 'all') return true;
+    if (!user.attendance?.deviationFlags) return false;
+    
+    return !!user.attendance.deviationFlags[filter as keyof typeof user.attendance.deviationFlags];
+  };
+
+  // Filter users based on deviation filter if needed
+  const filteredUsers = isDeviationView && filters?.deviationFilter && filters.deviationFilter !== 'all'
+    ? users.filter(user => matchesDeviationFilter(user, filters.deviationFilter))
+    : users;
 
   return (
     <div className="rounded-md border">
@@ -111,22 +130,29 @@ export const UserTable = ({ users, sort, onSort, isLoading, filters }: UserTable
             {showLeaveTypes && <TableHead className="text-center">Leave on Duty</TableHead>}
             {showLeaveTypes && <TableHead className="text-center">Optional Holiday</TableHead>}
             {showLeaveTypes && <TableHead className="text-center">Holiday Working</TableHead>}
+            {showDeviations && <TableHead className="text-center">
+              <div className="flex items-center justify-center">
+                <AlertTriangle className="mr-1 h-4 w-4 text-red-500" />
+                Deviation Flags
+              </div>
+            </TableHead>}
           </TableRow>
         </TableHeader>
         <TableBody>
-          {users.length === 0 ? (
+          {filteredUsers.length === 0 ? (
             <TableRow>
               <TableCell colSpan={5 + 
                 (showDailyDeviation ? 1 : 0) + 
                 (showMonthlyDeviation ? 1 : 0) + 
                 (showQuarterlyDeviation ? 1 : 0) + 
-                (showLeaveTypes ? 3 : 0)
+                (showLeaveTypes ? 3 : 0) + 
+                (showDeviations ? 1 : 0)
               } className="h-24 text-center">
                 No results found.
               </TableCell>
             </TableRow>
           ) : (
-            users.map((user) => (
+            filteredUsers.map((user) => (
               <TableRow key={user.id}>
                 <TableCell>{user.id}</TableCell>
                 <TableCell className="font-medium">{user.name}</TableCell>
@@ -180,6 +206,139 @@ export const UserTable = ({ users, sort, onSort, isLoading, filters }: UserTable
                 {showLeaveTypes && (
                   <TableCell className="text-center">
                     {user.attendance?.holidayWorking || 0}
+                  </TableCell>
+                )}
+                
+                {showDeviations && (
+                  <TableCell className="text-center">
+                    {user.attendance?.deviationFlags ? (
+                      <div className="flex flex-wrap justify-center gap-1">
+                        <TooltipProvider>
+                          {user.attendance.deviationFlags.consecutiveCrossOffice && (
+                            <Tooltip>
+                              <TooltipTrigger>
+                                <Badge variant="destructive" className="text-xs">CO</Badge>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p>Cross Office for 5+ consecutive days</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          )}
+                          
+                          {user.attendance.deviationFlags.consecutiveAbsent && (
+                            <Tooltip>
+                              <TooltipTrigger>
+                                <Badge variant="destructive" className="text-xs">AB</Badge>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p>Absent for 3+ consecutive days in a month</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          )}
+                          
+                          {user.attendance.deviationFlags.excessiveOnDuty && (
+                            <Tooltip>
+                              <TooltipTrigger>
+                                <Badge variant="destructive" className="text-xs">EOD</Badge>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p>Excessive On Duty (>10% in a month)</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          )}
+                          
+                          {user.attendance.deviationFlags.insufficientOnDuty && (
+                            <Tooltip>
+                              <TooltipTrigger>
+                                <Badge variant="destructive" className="text-xs">IOD</Badge>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p>Less than 15 days On Duty in a month</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          )}
+                          
+                          {user.attendance.deviationFlags.noLeaveInQuarter && (
+                            <Tooltip>
+                              <TooltipTrigger>
+                                <Badge variant="destructive" className="text-xs">NLQ</Badge>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p>No leave taken in a quarter</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          )}
+                          
+                          {user.attendance.deviationFlags.onlyCompOff && (
+                            <Tooltip>
+                              <TooltipTrigger>
+                                <Badge variant="destructive" className="text-xs">OCO</Badge>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p>Only comp off and no leave in month (Ratnagiri)</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          )}
+                          
+                          {user.attendance.deviationFlags.excessivePresent && (
+                            <Tooltip>
+                              <TooltipTrigger>
+                                <Badge variant="destructive" className="text-xs">EP</Badge>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p>More than 5 days present in office in a month</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          )}
+                          
+                          {user.attendance.deviationFlags.wfhMarkedAsOnDuty && (
+                            <Tooltip>
+                              <TooltipTrigger>
+                                <Badge variant="destructive" className="text-xs">WFH</Badge>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p>Work from Home marked as On Duty</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          )}
+                          
+                          {user.attendance.deviationFlags.onDutyWithLongHours && (
+                            <Tooltip>
+                              <TooltipTrigger>
+                                <Badge variant="destructive" className="text-xs">9HR</Badge>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p>On Duty with 9+ hours of work</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          )}
+                          
+                          {user.attendance.deviationFlags.missingOutcomeReports && (
+                            <Tooltip>
+                              <TooltipTrigger>
+                                <Badge variant="destructive" className="text-xs">MOR</Badge>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p>Missing outcome reports for On Duty</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          )}
+                          
+                          {user.attendance.deviationFlags.topDeviator && (
+                            <Tooltip>
+                              <TooltipTrigger>
+                                <Badge variant="destructive" className="text-xs">TOP10</Badge>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p>Among top 10 deviators for last 3 months</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          )}
+                        </TooltipProvider>
+                      </div>
+                    ) : (
+                      <Badge variant="outline" className="bg-green-100 text-green-800">No Deviations</Badge>
+                    )}
                   </TableCell>
                 )}
               </TableRow>

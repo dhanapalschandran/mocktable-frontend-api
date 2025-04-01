@@ -17,6 +17,21 @@ export interface AttendanceMetrics {
   leaveOnDuty?: number;
   optionalHoliday?: number;
   holidayWorking?: number;
+  deviationFlags?: DeviationFlags;
+}
+
+export interface DeviationFlags {
+  consecutiveCrossOffice?: boolean;
+  consecutiveAbsent?: boolean;
+  excessiveOnDuty?: boolean;
+  insufficientOnDuty?: boolean;
+  noLeaveInQuarter?: boolean;
+  onlyCompOff?: boolean;
+  excessivePresent?: boolean;
+  wfhMarkedAsOnDuty?: boolean;
+  onDutyWithLongHours?: boolean;
+  missingOutcomeReports?: boolean;
+  topDeviator?: boolean;
 }
 
 export interface PaginationParams {
@@ -33,6 +48,7 @@ export interface FilterParams {
   search?: string;
   status?: string;
   attendanceView?: string;
+  deviationFilter?: string;
 }
 
 export interface TableResponse<T> {
