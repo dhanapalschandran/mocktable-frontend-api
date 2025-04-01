@@ -1,4 +1,3 @@
-
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { FilterParams, User, SortParams } from "@/types/table";
 import { AlertTriangle, ArrowDown, ArrowUp, Clock, Calendar, CalendarDays } from "lucide-react";
@@ -34,7 +33,6 @@ export const UserTable = ({ users, sort, onSort, isLoading, filters }: UserTable
     </div>
   );
 
-  // Determine which columns to show based on filters
   const isAttendanceView = filters?.attendanceView !== undefined;
   const isDeviationView = filters?.deviationFilter !== undefined;
   
@@ -86,7 +84,6 @@ export const UserTable = ({ users, sort, onSort, isLoading, filters }: UserTable
     );
   }
 
-  // Helper function to check if a user matches the deviation filter
   const matchesDeviationFilter = (user: User, filter?: string): boolean => {
     if (!filter || filter === 'all') return true;
     if (!user.attendance?.deviationFlags) return false;
@@ -94,7 +91,6 @@ export const UserTable = ({ users, sort, onSort, isLoading, filters }: UserTable
     return !!user.attendance.deviationFlags[filter as keyof typeof user.attendance.deviationFlags];
   };
 
-  // Filter users based on deviation filter if needed
   const filteredUsers = isDeviationView && filters?.deviationFilter && filters.deviationFilter !== 'all'
     ? users.filter(user => matchesDeviationFilter(user, filters.deviationFilter))
     : users;
@@ -242,7 +238,7 @@ export const UserTable = ({ users, sort, onSort, isLoading, filters }: UserTable
                                 <Badge variant="destructive" className="text-xs">EOD</Badge>
                               </TooltipTrigger>
                               <TooltipContent>
-                                <p>Excessive On Duty (>10% in a month)</p>
+                                <p>Excessive On Duty (&gt;10% in a month)</p>
                               </TooltipContent>
                             </Tooltip>
                           )}
@@ -350,7 +346,6 @@ export const UserTable = ({ users, sort, onSort, isLoading, filters }: UserTable
   );
 };
 
-// Helper function to format deviation
 const formatDeviation = (deviation?: number): string => {
   if (deviation === undefined) return '0h';
   
@@ -358,7 +353,6 @@ const formatDeviation = (deviation?: number): string => {
   return `${sign}${deviation}h`;
 };
 
-// Helper function to get color based on deviation
 const getDeviationColor = (deviation: number): string => {
   if (deviation > 5) return 'bg-green-100 text-green-800 border-green-500';
   if (deviation >= 0) return 'bg-blue-100 text-blue-800 border-blue-500';

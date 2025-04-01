@@ -1,11 +1,12 @@
 
 import { mockUsers } from "@/data/mockUsers";
 import { FilterParams, PaginationParams, SortParams, TableResponse, User } from "@/types/table";
+import { isAfter, isBefore, isWithinInterval, parseISO, startOfMonth, endOfMonth, startOfWeek, endOfWeek } from "date-fns";
 
 // Simulate network delay
 const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
-// Function to filter users based on search and status
+// Function to filter users based on search, status and date range
 const filterUsers = (users: User[], filters: FilterParams): User[] => {
   let filteredUsers = [...users];
   
@@ -21,6 +22,42 @@ const filterUsers = (users: User[], filters: FilterParams): User[] => {
   
   if (filters.status) {
     filteredUsers = filteredUsers.filter(user => user.status === filters.status);
+  }
+  
+  // Apply date range filter if specified
+  if (filters.dateRangeType || (filters.dateRange && (filters.dateRange.from || filters.dateRange.to))) {
+    filteredUsers = filteredUsers.filter(user => {
+      const joinDate = parseISO(user.joinDate);
+      
+      // Apply filter based on dateRangeType
+      if (filters.dateRangeType === 'weekly' && filters.dateRange?.from) {
+        const weekStart = startOfWeek(filters.dateRange.from);
+        const weekEnd = endOfWeek(filters.dateRange.from);
+        return isWithinInterval(joinDate, { start: weekStart, end: weekEnd });
+      }
+      
+      if (filters.dateRangeType === 'monthly' && filters.dateRange?.from) {
+        const monthStart = startOfMonth(filters.dateRange.from);
+        const monthEnd = endOfMonth(filters.dateRange.from);
+        return isWithinInterval(joinDate, { start: monthStart, end: monthEnd });
+      }
+      
+      // Custom date range
+      if (filters.dateRange) {
+        if (filters.dateRange.from && filters.dateRange.to) {
+          return isWithinInterval(joinDate, { 
+            start: filters.dateRange.from, 
+            end: filters.dateRange.to 
+          });
+        } else if (filters.dateRange.from) {
+          return isAfter(joinDate, filters.dateRange.from) || joinDate.getTime() === filters.dateRange.from.getTime();
+        } else if (filters.dateRange.to) {
+          return isBefore(joinDate, filters.dateRange.to) || joinDate.getTime() === filters.dateRange.to.getTime();
+        }
+      }
+      
+      return true;
+    });
   }
   
   return filteredUsers;

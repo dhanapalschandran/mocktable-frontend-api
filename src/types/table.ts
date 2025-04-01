@@ -49,6 +49,11 @@ export interface FilterParams {
   status?: string;
   attendanceView?: string;
   deviationFilter?: string;
+  dateRange?: {
+    from?: Date;
+    to?: Date;
+  };
+  dateRangeType?: 'custom' | 'weekly' | 'monthly';
 }
 
 export interface TableResponse<T> {
