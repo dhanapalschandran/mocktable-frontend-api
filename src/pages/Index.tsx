@@ -86,7 +86,7 @@ const Index = () => {
   }, [pagination.page, pagination.pageSize, sort, filters]);
 
   return (
-    <div className="container mx-auto px-4 py-10">
+    <div className="py-6 px-4">
       <Card>
         <CardHeader>
           <CardTitle>User Management</CardTitle>
