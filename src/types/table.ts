@@ -7,6 +7,16 @@ export interface User {
   status: 'active' | 'inactive';
   joinDate: string;
   lastActive: string;
+  attendance?: AttendanceMetrics;
+}
+
+export interface AttendanceMetrics {
+  dailyDeviation?: number;
+  monthlyDeviation?: number;
+  quarterlyDeviation?: number;
+  leaveOnDuty?: number;
+  optionalHoliday?: number;
+  holidayWorking?: number;
 }
 
 export interface PaginationParams {
@@ -22,6 +32,7 @@ export interface SortParams {
 export interface FilterParams {
   search?: string;
   status?: string;
+  attendanceView?: string;
 }
 
 export interface TableResponse<T> {

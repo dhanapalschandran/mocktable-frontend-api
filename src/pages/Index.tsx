@@ -101,7 +101,8 @@ const Index = () => {
             users={users} 
             sort={sort} 
             onSort={handleSort} 
-            isLoading={isLoading} 
+            isLoading={isLoading}
+            filters={filters}
           />
           
           <TablePagination
